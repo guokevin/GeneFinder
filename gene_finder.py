@@ -61,9 +61,27 @@ def get_reverse_complement(dna):
     complement = ""
     for i in range(-1,-len(dna)-1,-1):
         complement += get_complement(dna[i])
-
     return complement
 
+def earliest_frame_stop(threes):
+    for i in range(0, len(threes)):
+        if(threes[i] == 'TGA' or threes[i] == 'TAA' or threes[i] == 'TAG'):
+            return i
+    return -1
+
+def split_list(dna):
+    threes = []
+    for i in range(0,len(dna)/3):
+        templist = dna[:3]
+        threes.append(templist)
+        dna = dna[3:]
+    return threes
+
+def open_frame(threes):
+    for i in range(0, len(threes)):
+        if(threes[i] == 'ATG'):
+            return i
+    return -1
 
 def rest_of_ORF(dna):
     """ Takes a DNA sequence that is assumed to begin with a start
@@ -89,41 +107,14 @@ def rest_of_ORF(dna):
     """
 
     threes = split_list(dna)
-    # print 'a'
     if(threes[0] != 'ATG'):
         print("DNA sequence does not begin with a start codon")
         return
-    # print 'b'
     frame = earliest_frame_stop(threes)
     if(frame != -1):
         return dna[:(3*(frame))]
     else:
         return dna;
-    # print 'c'
-
-
-def earliest_frame_stop(threes):
-    for i in range(0, len(threes)):
-        if(threes[i] == 'TGA' or threes[i] == 'TAA' or threes[i] == 'TAG'):
-            return i
-    return -1
-
-def split_list(dna):
-    threes = []
-    for i in range(0,len(dna)/3):
-        templist = dna[:3]
-        threes.append(templist)
-        dna = dna[3:]
-    # print dna
-    # if(len(dna)%3 != 0):
-    #     threes.append(dna[3:])
-    return threes
-
-def open_frame(threes):
-    for i in range(0, len(threes)):
-        if(threes[i] == 'ATG'):
-            return i
-    return -1
 
 def find_all_ORFs_oneframe(dna):
     """ Finds all non-nested open reading frames in the given DNA
@@ -136,7 +127,7 @@ def find_all_ORFs_oneframe(dna):
         dna: a DNA sequence
         returns: a list of non-nested ORFs
 
-        Added code to see what would happen if inserted program had no ATG to begin with, had no ATG at all, and increased the vigor of the test
+        Added code to see what would happen if inserted program had no ATG to begin with, had no ATG at all, and increased the vigor of the test to ensure it doesn't find nested orfs
     >>> find_all_ORFs_oneframe("ATGCATGAATGTAGATAGATGTGCCC")
     ['ATGCATGAATGTAGA', 'ATGTGCCC']
     >>> find_all_ORFs_oneframe("CAT")
@@ -145,33 +136,20 @@ def find_all_ORFs_oneframe(dna):
     ['ATGTGCCCC']
     >>> find_all_ORFs_oneframe("ATGCATAGATAGCCCATGTGCCCATGACCAATGCCC")
     ['ATGCATAGA', 'ATGTGCCCA', 'ATGCCC']
+    >>> find_all_ORFs_oneframe("ATGCATATGAGATAG")
+    ['ATGCATATGAGA']
     """
     threes = split_list(dna)
     orfs = []
 
-    while(len(threes) > 0):
-        # print len(threes)
-        if(open_frame(threes) == -1):
-            return orfs
-        start_frame = open_frame(threes)
-        threes = threes[start_frame:]
-        dna = dna[3*start_frame:]
-        orfs.append(rest_of_ORF(dna))
-        end_frame = earliest_frame_stop(threes)
-
-        # print'd'
-
-        if (end_frame == -1):
-            return orfs
-
-        threes = threes[end_frame:]
-        dna = dna[3*end_frame:]
-
-        start_frame = open_frame(threes)
-        threes = threes[start_frame:]
-        dna = dna[3*start_frame:]
-
-        
+    i = 0
+    while i < len(dna):
+        if(dna[i:i+3] == 'ATG'):
+            temp = rest_of_ORF(dna[i:])
+            orfs.append(temp)
+            i += len(temp)
+        i += 3
+    return orfs        
 
 def find_all_ORFs(dna):
     """ Finds all non-nested open reading frames in the given DNA sequence in
@@ -220,12 +198,9 @@ def longest_ORF(dna):
     """
     maximum = ''
     for orf in find_all_ORFs_both_strands(dna):
-        # print orf
         if len(orf) > len(maximum):
             maximum = orf
-
     return maximum
-    # return max(find_all_ORFs_both_strands(dna), key = len)
 
 def longest_ORF_noncoding(dna, num_trials):
     """ Computes the maximum length of the longest ORF over num_trials shuffles
@@ -238,13 +213,9 @@ def longest_ORF_noncoding(dna, num_trials):
     maximum = ''
     for i in range(0,num_trials):
         dna = shuffle_string(dna)
-        # print "dna:",dna
-        # print i
         temp = longest_ORF(dna)
         if len(temp) > len(maximum):
             maximum = temp
-        # print "maximum:",maximum
-    # print len(maximum)
     return len(maximum)
 
 def coding_strand_to_AA(dna):
@@ -281,8 +252,6 @@ def gene_finder(dna):
         returns: a list of all amino acid sequences coded by the sequence dna.
     """
     threshold = longest_ORF_noncoding(dna, 1000)
-    print threshold
-    #threshold = 100
 
     orfs = find_all_ORFs_both_strands(dna)
 
@@ -292,7 +261,6 @@ def gene_finder(dna):
         if (len(orfs[i]) > threshold):
             return_orfs.append(orfs[i])
 
-    # return return_orfs
     for i in range(0, len(return_orfs)):
         return_orfs[i] = coding_strand_to_AA(return_orfs[i])
     
@@ -300,12 +268,12 @@ def gene_finder(dna):
 
 if __name__ == "__main__":
     from load import load_seq
-    # dna = load_seq("./data/X73525.fa")
+    dna = load_seq("./data/X73525.fa")
     # print dna
-    # print(gene_finder(dna))
+    print(gene_finder(dna))
     # gene_finder(dna)
-    import doctest
-    doctest.testmod()
-    doctest.run_docstring_examples(find_all_ORFs_both_strands,globals(),verbose=True)
+    # import doctest
+    # doctest.testmod()
+    # doctest.run_docstring_examples(find_all_ORFs_oneframe,globals(),verbose=True)
 
-    #print(longest_ORF_noncoding('ATGTAG',30))
+    # print(find_all_ORFs_oneframe('ATGCCCTCGTAG'))
