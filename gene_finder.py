@@ -63,15 +63,6 @@ def get_reverse_complement(dna):
         complement += get_complement(dna[i])
     return complement
 
-def earliest_frame_stop(threes):
-    """
-    Return the index of the first occurrence of an end codon
-    """
-    for i in range(len(threes)):
-        if(threes[i] == 'TGA' or threes[i] == 'TAA' or threes[i] == 'TAG'):
-            return i
-    return -1
-
 
 def split_list(dna):
     """
@@ -83,15 +74,6 @@ def split_list(dna):
         threes.append(templist)
         dna = dna[3:]
     return threes
-
-def open_frame(threes):
-    """
-    Return the index of the first occurrence of ATG or return -1
-    """
-    for i in range(len(threes)):
-        if(threes[i] == 'ATG'):
-            return i
-    return -1
 
 def rest_of_ORF(dna):
     """ Takes a DNA sequence that is assumed to begin with a start
@@ -107,24 +89,16 @@ def rest_of_ORF(dna):
     'ATG'
     >>> rest_of_ORF("ATGAGATAGG")
     'ATGAGA'
-    >>> rest_of_ORF("ATAGATAGG")
-    DNA sequence does not begin with a start codon
     >>> rest_of_ORF("ATGAGAAGG")
     'ATGAGAAGG'
 
     Start codon - ATG
     First in Frame Stop Codon - TAG, TAA, TGA
     """
-
-    threes = split_list(dna)
-    if(threes[0] != 'ATG'):
-        print("DNA sequence does not begin with a start codon")
-        return
-    frame = earliest_frame_stop(threes)
-    if(frame != -1):
-        return dna[:(3*(frame))]
-    else:
-        return dna;
+    for i in range(0,len(dna),3):
+        if(dna[i:i+3] == 'TGA' or dna[i:i+3] == 'TAA' or dna[i:i+3] == 'TAG'):
+            return dna[0:i]
+    return dna
 
 def find_all_ORFs_oneframe(dna):
     """ Finds all non-nested open reading frames in the given DNA
@@ -149,7 +123,6 @@ def find_all_ORFs_oneframe(dna):
     >>> find_all_ORFs_oneframe("ATGCATATGAGATAG")
     ['ATGCATATGAGA']
     """
-    threes = split_list(dna)
     orfs = []
 
     i = 0
@@ -265,7 +238,7 @@ def gene_finder(dna):
         dna: a DNA sequence
         returns: a list of all amino acid sequences coded by the sequence dna.
     """
-    threshold = longest_ORF_noncoding(dna, 1000)
+    threshold = longest_ORF_noncoding(dna, 1500)
     orfs = find_all_ORFs_both_strands(dna)
 
     #Initializes blank return list
@@ -290,6 +263,6 @@ if __name__ == "__main__":
     # gene_finder(dna)
     # import doctest
     # doctest.testmod()
-    # doctest.run_docstring_examples(find_all_ORFs_oneframe,globals(),verbose=True)
+    # doctest.run_docstring_examples(rest_of_ORF,globals(),verbose=True)
 
     # print(find_all_ORFs_oneframe('ATGCCCTCGTAG'))
