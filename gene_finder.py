@@ -64,21 +64,31 @@ def get_reverse_complement(dna):
     return complement
 
 def earliest_frame_stop(threes):
-    for i in range(0, len(threes)):
+    """
+    Return the index of the first occurrence of an end codon
+    """
+    for i in range(len(threes)):
         if(threes[i] == 'TGA' or threes[i] == 'TAA' or threes[i] == 'TAG'):
             return i
     return -1
 
+
 def split_list(dna):
+    """
+    Split the list into sections of 3 DNA
+    """
     threes = []
-    for i in range(0,len(dna)/3):
+    for i in range(len(dna)/3):
         templist = dna[:3]
         threes.append(templist)
         dna = dna[3:]
     return threes
 
 def open_frame(threes):
-    for i in range(0, len(threes)):
+    """
+    Return the index of the first occurrence of ATG or return -1
+    """
+    for i in range(len(threes)):
         if(threes[i] == 'ATG'):
             return i
     return -1
@@ -147,6 +157,7 @@ def find_all_ORFs_oneframe(dna):
         if(dna[i:i+3] == 'ATG'):
             temp = rest_of_ORF(dna[i:])
             orfs.append(temp)
+            #skips past checked DNA
             i += len(temp)
         i += 3
     return orfs        
@@ -196,6 +207,7 @@ def longest_ORF(dna):
     >>> longest_ORF("AGTGTAAAACAT")
     'ATGTTTTACACT'
     """
+    #Initialize max value
     maximum = ''
     for orf in find_all_ORFs_both_strands(dna):
         if len(orf) > len(maximum):
@@ -210,10 +222,12 @@ def longest_ORF_noncoding(dna, num_trials):
         num_trials: the number of random shuffles
         returns: the maximum length longest ORF
     """
+    #Initialize maximum value
     maximum = ''
     for i in range(0,num_trials):
         dna = shuffle_string(dna)
         temp = longest_ORF(dna)
+        #Compare maximum lengths
         if len(temp) > len(maximum):
             maximum = temp
     return len(maximum)
@@ -252,15 +266,17 @@ def gene_finder(dna):
         returns: a list of all amino acid sequences coded by the sequence dna.
     """
     threshold = longest_ORF_noncoding(dna, 1000)
-
     orfs = find_all_ORFs_both_strands(dna)
 
+    #Initializes blank return list
     return_orfs = []
 
+    #Checks if orfs are above threshold
     for i in range(0, len(orfs)):
         if (len(orfs[i]) > threshold):
             return_orfs.append(orfs[i])
 
+    #Converts to amino acids
     for i in range(0, len(return_orfs)):
         return_orfs[i] = coding_strand_to_AA(return_orfs[i])
     
