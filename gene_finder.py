@@ -63,18 +63,6 @@ def get_reverse_complement(dna):
         complement += get_complement(dna[i])
     return complement
 
-
-def split_list(dna):
-    """
-    Split the list into sections of 3 DNA
-    """
-    threes = []
-    for i in range(len(dna)/3):
-        templist = dna[:3]
-        threes.append(templist)
-        dna = dna[3:]
-    return threes
-
 def rest_of_ORF(dna):
     """ Takes a DNA sequence that is assumed to begin with a start
         codon and returns the sequence up to but not including the
@@ -223,12 +211,12 @@ def coding_strand_to_AA(dna):
         >>> coding_strand_to_AA("CCCGCTTT")
         'PA'
     """
-    dna_list = split_list(dna)
 
     aa = ""
-    for i in range(0, len(dna_list)):
-        aa += aa_table[dna_list[i]]
-
+    #Find appropriate coding strand length
+    length = len(dna) - len(dna)%3
+    for i in range(0, length,3):
+        aa += aa_table[dna[i:i+3]]
     return aa
 
 
@@ -263,6 +251,6 @@ if __name__ == "__main__":
     # gene_finder(dna)
     # import doctest
     # doctest.testmod()
-    # doctest.run_docstring_examples(rest_of_ORF,globals(),verbose=True)
+    # doctest.run_docstring_examples(coding_strand_to_AA,globals(),verbose=True)
 
     # print(find_all_ORFs_oneframe('ATGCCCTCGTAG'))
